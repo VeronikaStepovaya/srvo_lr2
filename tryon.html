@@ -331,7 +331,7 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- ВИПРАВЛЕНА A-FRAME СЦЕНА ЗІ ЗБІЛЬШЕНИМ ТАЙМАУТОМ           -->
+    <!-- A-FRAME СЦЕНА - БЕЗ ЗАЙВИХ ПАРАМЕТРІВ                     -->
     <!-- ============================================================ -->
     <a-scene
     mindar-face="
@@ -339,8 +339,6 @@
         uiLoading: no;
         uiScanning: no;
         uiError: no;
-        maxTrack: 1;
-        timeout: 60;
     "
     embedded
     color-space="sRGB"
@@ -404,48 +402,24 @@
         const statusEl = document.getElementById('status');
         const switchCam = document.getElementById('switch-cam');
 
-        // === ВІДСТЕЖЕННЯ СТАНУ ЗАВАНТАЖЕННЯ ===
-        let loadAttempts = 0;
-        const maxAttempts = 30;
-
-        function checkLoading() {
-            loadAttempts++;
-            const mindar = document.querySelector('a-scene').components['mindar-face'];
-
-            if (mindar && mindar.started) {
-                loading.classList.add('hidden');
-                statusEl.textContent = '👤 Шукайте обличчя...';
-                statusEl.className = 'lost';
-                console.log('✅ MindAR успішно запущено!');
-                return;
-            }
-
-            if (loadAttempts > maxAttempts) {
-                loading.classList.add('hidden');
-                statusEl.textContent = '⚠️ Помилка завантаження. Спробуйте перезавантажити.';
-                statusEl.className = 'lost';
-                statusEl.style.color = '#ff4757';
-                console.log('❌ MindAR не запустився після ' + maxAttempts + ' спроб');
-                return;
-            }
-
-            const dots = '.'.repeat(loadAttempts % 4);
-            loadProgress.textContent = 'Завантаження моделі обличчя' + dots;
-            setTimeout(checkLoading, 500);
+        // Приховуємо лоадер, коли MindAR запуститься
+        function hideLoader() {
+            loading.classList.add('hidden');
+            statusEl.textContent = '👤 Шукайте обличчя...';
+            statusEl.className = 'lost';
         }
-
-        // Починаємо перевірку через 2 секунди
-        setTimeout(checkLoading, 2000);
 
         // === СТАТУС ВІДСТЕЖЕННЯ ===
         const scene = document.querySelector('a-scene');
         let faceFound = false;
 
+        // Слухаємо події MindAR
         scene.addEventListener('mindar-face-target-found', () => {
             faceFound = true;
             statusEl.textContent = '✅ Обличчя знайдено!';
             statusEl.className = 'found';
             console.log('🎯 Обличчя знайдено');
+            hideLoader();
         });
 
         scene.addEventListener('mindar-face-target-lost', () => {
@@ -454,6 +428,36 @@
             statusEl.className = 'lost';
             console.log('👤 Обличчя втрачено');
         });
+
+        // === ПЕРЕВІРКА ЗАВАНТАЖЕННЯ ===
+        let attempts = 0;
+        const maxAttempts = 20;
+
+        function checkMindAR() {
+            attempts++;
+            const mindar = document.querySelector('a-scene').components['mindar-face'];
+
+            if (mindar && mindar.started) {
+                hideLoader();
+                console.log('✅ MindAR успішно запущено!');
+                return;
+            }
+
+            if (attempts > maxAttempts) {
+                loading.classList.add('hidden');
+                statusEl.textContent = '⚠️ Спробуйте перезавантажити сторінку';
+                statusEl.className = 'lost';
+                statusEl.style.color = '#ff4757';
+                return;
+            }
+
+            const dots = '.'.repeat(attempts % 4);
+            loadProgress.textContent = 'Завантаження моделі обличчя' + dots;
+            setTimeout(checkMindAR, 500);
+        }
+
+        // Починаємо перевірку через 2 секунди
+        setTimeout(checkMindAR, 2000);
 
         // === КЕРУВАННЯ АКСЕСУАРАМИ ===
         const list = ["glasses1", "glasses2", "hat1", "hat2", "earring"];
@@ -601,23 +605,9 @@
             if (e.key === 'Escape') preview.style.visibility = 'hidden';
         });
 
-        // === ПРИМУСОВИЙ ПЕРЕЗАПУСК ПРИ ПОМИЛЦІ ===
-        // Якщо через 15 секунд все ще не працює, перезавантажуємо сторінку
-        setTimeout(() => {
-            const mindar = document.querySelector('a-scene').components['mindar-face'];
-            if (!mindar || !mindar.started) {
-                console.log('🔄 Примусовий перезапуск сторінки...');
-                // Показуємо повідомлення
-                statusEl.textContent = '🔄 Перезавантаження...';
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            }
-        }, 15000);
-
         console.log('🚀 Віртуальна примірочна запущена');
         console.log('💡 Натисніть C для фото, ESC для закриття');
-        console.log('💡 Якщо довго завантажується - оновіть сторінку');
+        console.log('💡 Натисніть 🔄 для перемикання камери');
     });
 </script>
 
