@@ -2,24 +2,24 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Віртуальна примірочна</title>
 
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js">
     </script>
 
-    <!-- MindAR Face Tracking для A-Frame -->
+    <!-- MindAR Face Tracking -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-face-aframe.prod.js">
     </script>
 
     <style>
+        /* ... ваші стилі ... */
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
         .back-btn {
             position: fixed;
             top: 20px;
@@ -33,12 +33,7 @@
             font-size: 14px;
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
         }
-        .back-btn:hover {
-            background: rgba(0, 0, 0, 0.7);
-        }
-
         .options-panel {
             position: fixed;
             left: 50%;
@@ -46,67 +41,53 @@
             top: 20px;
             z-index: 10;
             display: flex;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 12px 20px;
-            border-radius: 20px;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 16px;
+            border-radius: 16px;
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             flex-wrap: wrap;
             justify-content: center;
+            max-width: 95%;
         }
-
         .options-panel img {
             border: solid 3px transparent;
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             object-fit: cover;
             cursor: pointer;
-            border-radius: 12px;
+            border-radius: 10px;
             transition: all 0.3s;
-            opacity: 0.5;
+            opacity: 0.4;
         }
-
-        .options-panel img:hover {
-            transform: scale(1.1);
-            opacity: 0.8;
-        }
-
         .options-panel img.selected {
             border-color: #2ed573;
             opacity: 1;
-            box-shadow: 0 0 20px rgba(46, 213, 115, 0.3);
         }
-
-        .options-panel .category-label {
-            color: #a8b2d1;
-            font-size: 11px;
-            text-align: center;
-            display: block;
-            margin-top: 2px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
         .options-panel .category-group {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            padding: 0 6px;
+            gap: 2px;
+            padding: 0 4px;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
         .options-panel .category-group:last-child {
             border-right: none;
         }
-
+        .options-panel .category-label {
+            color: #a8b2d1;
+            font-size: 9px;
+            text-align: center;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
         .options-panel .category-group .items {
             display: flex;
-            gap: 8px;
+            gap: 4px;
         }
-
-        /* Кнопка захоплення фото */
         #capture-btn {
             position: fixed;
             bottom: 30px;
@@ -117,30 +98,44 @@
             backdrop-filter: blur(8px);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        #capture-btn:hover {
-            transform: translateX(-50%) scale(1.1);
-            background: rgba(255, 255, 255, 0.25);
-        }
         #capture-btn .inner {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: #fff;
-            transition: all 0.3s;
         }
-        #capture-btn:active .inner {
-            transform: scale(0.85);
+        #status {
+            position: fixed;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            backdrop-filter: blur(4px);
+            text-align: center;
+            max-width: 90%;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        /* Попередній перегляд фото */
+        #status.found {
+            border-color: rgba(46, 213, 115, 0.3);
+            color: #2ed573;
+        }
+        #status.lost {
+            border-color: rgba(254, 202, 87, 0.3);
+            color: #feca57;
+        }
         #preview {
             position: fixed;
             z-index: 30;
@@ -148,7 +143,7 @@
             top: 5%;
             width: 90%;
             height: 90%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.92);
             border-radius: 16px;
             border: 2px solid rgba(255, 255, 255, 0.1);
             visibility: hidden;
@@ -160,147 +155,164 @@
         }
         #preview-image {
             max-width: 100%;
-            max-height: 80%;
+            max-height: 75%;
             border-radius: 8px;
             object-fit: contain;
         }
         #preview-controls {
             display: flex;
-            gap: 20px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         #preview-controls button {
-            padding: 12px 30px;
+            padding: 10px 24px;
             border: none;
-            border-radius: 30px;
-            font-size: 16px;
+            border-radius: 25px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+        }
+        #preview-controls button:hover {
+            transform: scale(1.05);
         }
         #preview-close {
             background: #ff4757;
             color: #fff;
         }
-        #preview-close:hover {
-            transform: scale(1.05);
-        }
         #preview-share {
             background: #6c5ce7;
             color: #fff;
-        }
-        #preview-share:hover {
-            transform: scale(1.05);
         }
         #preview-download {
             background: #2ed573;
             color: #fff;
         }
-        #preview-download:hover {
-            transform: scale(1.05);
-        }
-
-        /* Статус */
-        #status {
+        #switch-cam {
             position: fixed;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 80px;
+            right: 20px;
             z-index: 15;
+            background: rgba(0, 0, 0, 0.5);
             color: #fff;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
             backdrop-filter: blur(4px);
-            text-align: center;
-            max-width: 90%;
-            pointer-events: none;
         }
-
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0b0e1a;
+            z-index: 100;
+            color: #fff;
+            font-size: 18px;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #6c5ce7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #loading.hidden {
+            display: none;
+        }
         @media (max-width: 600px) {
             .options-panel {
                 top: 10px;
-                padding: 8px 12px;
-                gap: 6px;
-                border-radius: 12px;
-                max-width: 95%;
+                padding: 6px 10px;
             }
             .options-panel img {
                 width: 36px;
                 height: 36px;
             }
-            .options-panel .category-label {
-                font-size: 9px;
-            }
             #capture-btn {
-                width: 60px;
-                height: 60px;
+                width: 54px;
+                height: 54px;
                 bottom: 20px;
             }
             #capture-btn .inner {
-                width: 40px;
-                height: 40px;
+                width: 38px;
+                height: 38px;
             }
             #status {
-                font-size: 12px;
-                bottom: 100px;
+                font-size: 11px;
+                bottom: 90px;
                 padding: 6px 14px;
             }
-            #preview-controls button {
-                padding: 10px 20px;
-                font-size: 14px;
+            #switch-cam {
+                top: 70px;
+                right: 10px;
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
             }
             .back-btn {
                 top: 10px;
                 left: 10px;
-                font-size: 12px;
-                padding: 6px 14px;
+                font-size: 11px;
+                padding: 6px 12px;
             }
         }
     </style>
 </head>
 <body>
 
+    <div id="loading">
+        <div class="spinner"></div>
+        <span>⏳ Завантаження...</span>
+    </div>
+
     <a href="index.html" class="back-btn">← Назад</a>
+    <button id="switch-cam">🔄</button>
 
-    <div id="status">👤 Шукайте обличчя...</div>
+    <div id="status" class="lost">👤 Шукайте обличчя...</div>
 
-    <!-- Панель вибору аксесуарів -->
     <div class="options-panel" id="optionsPanel">
-        <!-- Капелюхи -->
         <div class="category-group">
             <span class="category-label">🎩 Капелюхи</span>
             <div class="items">
-                <img id="hat1" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/hat/thumbnail.png" title="Капелюх 1" />
-                <img id="hat2" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/hat2/thumbnail.png" title="Капелюх 2" />
+                <img id="hat1" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/hat/thumbnail.png" />
+                <img id="hat2" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/hat2/thumbnail.png" />
             </div>
         </div>
-
-        <!-- Окуляри -->
         <div class="category-group">
             <span class="category-label">👓 Окуляри</span>
             <div class="items">
-                <img id="glasses1" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/glasses/thumbnail.png" title="Окуляри 1" />
-                <img id="glasses2" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/glasses2/thumbnail.png" title="Окуляри 2" />
+                <img id="glasses1" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/glasses/thumbnail.png" />
+                <img id="glasses2" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/glasses2/thumbnail.png" />
             </div>
         </div>
-
-        <!-- Сережки -->
         <div class="category-group">
             <span class="category-label">💎 Сережки</span>
             <div class="items">
-                <img id="earring" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/earring/thumbnail.png" title="Сережки" />
+                <img id="earring" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/earring/thumbnail.png" />
             </div>
         </div>
     </div>
 
-    <!-- Кнопка захоплення -->
-    <div id="capture-btn">
-        <div class="inner"></div>
-    </div>
+    <div id="capture-btn"><div class="inner"></div></div>
 
-    <!-- Попередній перегляд -->
     <div id="preview">
         <img id="preview-image" />
         <div id="preview-controls">
@@ -310,14 +322,24 @@
         </div>
     </div>
 
-    <!-- A-Frame сцена -->
-    <a-scene mindar-face embedded
+    <!-- ============================================================ -->
+    <!-- ВИПРАВЛЕНА A-FRAME СЦЕНА                                      -->
+    <!-- ВАЖЛИВО: ВСІ ПАРАМЕТРИ ПЕРЕДАЮТЬСЯ ПРАВИЛЬНО                 -->
+    <!-- ============================================================ -->
+    <a-scene
+    mindar-face="
+        autoStart: true;
+        uiLoading: no;
+        uiScanning: no;
+        uiError: no;
+        maxTrack: 1;
+    "
+    embedded
     color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights"
+    renderer="colorManagement: true; physicallyCorrectLights: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
 
-    <!-- Активи (моделі) -->
     <a-assets>
         <a-asset-item id="headModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/sparkar/headOccluder.glb">
         </a-asset-item>
@@ -335,7 +357,7 @@
 
     <a-camera active="false" position="0 0 0"></a-camera>
 
-    <!-- Оклюдер голови (для правильної оклюзії) -->
+    <!-- Оклюдер -->
     <a-entity mindar-face-target="anchorIndex: 168">
         <a-gltf-model mindar-face-occluder
         position="0 -0.3 0.15"
@@ -345,85 +367,59 @@
         </a-gltf-model>
     </a-entity>
 
-    <!-- Капелюх 1 (точка 10 - верх голови) -->
+    <!-- Аксесуари -->
     <a-entity mindar-face-target="anchorIndex: 10">
-        <a-gltf-model
-        rotation="0 0 0"
-        position="0 1.0 -0.5"
-        scale="0.35 0.35 0.35"
-        src="#hatModel"
-        class="hat1-entity"
-        visible="false">
-        </a-gltf-model>
+        <a-gltf-model rotation="0 0 0" position="0 1.0 -0.5" scale="0.35 0.35 0.35" src="#hatModel" class="hat1-entity" visible="false"></a-gltf-model>
     </a-entity>
-
-    <!-- Капелюх 2 (точка 10 - верх голови) -->
     <a-entity mindar-face-target="anchorIndex: 10">
-        <a-gltf-model
-        rotation="0 0 0"
-        position="0 -0.2 -0.5"
-        scale="0.008 0.008 0.008"
-        src="#hatModel2"
-        class="hat2-entity"
-        visible="false">
-        </a-gltf-model>
+        <a-gltf-model rotation="0 0 0" position="0 -0.2 -0.5" scale="0.008 0.008 0.008" src="#hatModel2" class="hat2-entity" visible="false"></a-gltf-model>
     </a-entity>
-
-    <!-- Окуляри 1 (точка 168 - перенісся) -->
     <a-entity mindar-face-target="anchorIndex: 168">
-        <a-gltf-model
-        rotation="0 0 0"
-        position="0 0 0"
-        scale="0.01 0.01 0.01"
-        src="#glassesModel"
-        class="glasses1-entity"
-        visible="false">
-        </a-gltf-model>
+        <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.01 0.01 0.01" src="#glassesModel" class="glasses1-entity" visible="false"></a-gltf-model>
     </a-entity>
-
-    <!-- Окуляри 2 (точка 168 - перенісся) -->
     <a-entity mindar-face-target="anchorIndex: 168">
-        <a-gltf-model
-        rotation="0 -90 0"
-        position="0 -0.3 0"
-        scale="0.6 0.6 0.6"
-        src="#glassesModel2"
-        class="glasses2-entity"
-        visible="false">
-        </a-gltf-model>
+        <a-gltf-model rotation="0 -90 0" position="0 -0.3 0" scale="0.6 0.6 0.6" src="#glassesModel2" class="glasses2-entity" visible="false"></a-gltf-model>
     </a-entity>
-
-    <!-- Сережка ліва (точка 127 - ліве вухо) -->
     <a-entity mindar-face-target="anchorIndex: 127">
-        <a-gltf-model
-        rotation="-0.1 0 0"
-        position="0 -0.3 -0.3"
-        scale="0.05 0.05 0.05"
-        src="#earringModel"
-        class="earring-entity"
-        visible="false">
-        </a-gltf-model>
+        <a-gltf-model rotation="-0.1 0 0" position="0 -0.3 -0.3" scale="0.05 0.05 0.05" src="#earringModel" class="earring-entity" visible="false"></a-gltf-model>
     </a-entity>
-
-    <!-- Сережка права (точка 356 - праве вухо) -->
     <a-entity mindar-face-target="anchorIndex: 356">
-        <a-gltf-model
-        rotation="0.1 0 0"
-        position="0 -0.3 -0.3"
-        scale="0.05 0.05 0.05"
-        src="#earringModel"
-        class="earring-entity"
-        visible="false">
-        </a-gltf-model>
+        <a-gltf-model rotation="0.1 0 0" position="0 -0.3 -0.3" scale="0.05 0.05 0.05" src="#earringModel" class="earring-entity" visible="false"></a-gltf-model>
     </a-entity>
 
 </a-scene>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // === УПРАВЛІННЯ ВИДИМІСТЮ АКСЕСУАРІВ ===
+        const loading = document.getElementById('loading');
+        const statusEl = document.getElementById('status');
+        const switchCam = document.getElementById('switch-cam');
+
+        // Приховуємо лоадер через 2 секунди
+        setTimeout(() => {
+            loading.classList.add('hidden');
+        }, 2000);
+
+        // === СТАТУС ВІДСТЕЖЕННЯ ===
+        const scene = document.querySelector('a-scene');
+        let faceFound = false;
+
+        scene.addEventListener('mindar-face-target-found', () => {
+            faceFound = true;
+            statusEl.textContent = '✅ Обличчя знайдено!';
+            statusEl.className = 'found';
+            console.log('🎯 Обличчя знайдено');
+        });
+
+        scene.addEventListener('mindar-face-target-lost', () => {
+            faceFound = false;
+            statusEl.textContent = '👤 Шукайте обличчя...';
+            statusEl.className = 'lost';
+            console.log('👤 Обличчя втрачено');
+        });
+
+        // === КЕРУВАННЯ АКСЕСУАРАМИ ===
         const list = ["glasses1", "glasses2", "hat1", "hat2", "earring"];
-        // Початкова видимість: окуляри 1 та капелюх 1 видимі
         const visibles = [true, false, false, true, false];
 
         const setVisible = (button, entities, visible) => {
@@ -437,35 +433,6 @@
             });
         };
 
-        list.forEach((item, index) => {
-            const button = document.querySelector("#" + item);
-            const entities = document.querySelectorAll("." + item + "-entity");
-            setVisible(button, entities, visibles[index]);
-
-            button.addEventListener('click', () => {
-                // Якщо це категорія з кількома елементами, вимикаємо інші в категорії
-                const category = getCategory(item);
-
-                // Вимикаємо всі елементи в цій категорії
-                const categoryItems = getCategoryItems(category);
-                categoryItems.forEach(id => {
-                    if (id !== item) {
-                        const otherBtn = document.querySelector("#" + id);
-                        const otherEntities = document.querySelectorAll("." + id +
-                        "-entity");
-                        const otherIndex = list.indexOf(id);
-                        visibles[otherIndex] = false;
-                        setVisible(otherBtn, otherEntities, false);
-                    }
-                });
-
-                // Перемикаємо поточний елемент
-                visibles[index] = !visibles[index];
-                setVisible(button, entities, visibles[index]);
-            });
-        });
-
-        // Допоміжні функції для категорій
         function getCategory(item) {
             if (item.startsWith('hat')) return 'hat';
             if (item.startsWith('glasses')) return 'glasses';
@@ -480,18 +447,46 @@
             return [];
         }
 
-        // === СТАТУС ВІДСТЕЖЕННЯ ===
-        const statusEl = document.getElementById('status');
+        list.forEach((item, index) => {
+            const button = document.querySelector("#" + item);
+            const entities = document.querySelectorAll("." + item + "-entity");
+            setVisible(button, entities, visibles[index]);
 
-        // Відстежуємо події MindAR
-        document.querySelector('a-scene').addEventListener('mindar-face-target-found', () => {
-            statusEl.textContent = '✅ Обличчя знайдено!';
-            statusEl.style.color = '#2ed573';
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const category = getCategory(item);
+                const categoryItems = getCategoryItems(category);
+
+                categoryItems.forEach(id => {
+                    if (id !== item) {
+                        const otherBtn = document.querySelector("#" + id);
+                        const otherEntities = document.querySelectorAll("." + id +
+                        "-entity");
+                        const otherIndex = list.indexOf(id);
+                        visibles[otherIndex] = false;
+                        setVisible(otherBtn, otherEntities, false);
+                    }
+                });
+
+                visibles[index] = !visibles[index];
+                setVisible(button, entities, visibles[index]);
+            });
         });
 
-        document.querySelector('a-scene').addEventListener('mindar-face-target-lost', () => {
-            statusEl.textContent = '👤 Шукайте обличчя...';
-            statusEl.style.color = '#feca57';
+        // === ПЕРЕМИКАННЯ КАМЕРИ ===
+        let camIndex = 0;
+        switchCam.addEventListener('click', () => {
+            const mindar = document.querySelector('a-scene').components['mindar-face'];
+            if (mindar && mindar.switchCamera) {
+                mindar.switchCamera();
+                camIndex = 1 - camIndex;
+                statusEl.textContent = camIndex === 0 ? '📷 Тильна камера' : '📷 Фронтальна камера';
+                setTimeout(() => {
+                    statusEl.textContent = faceFound ? '✅ Обличчя знайдено!' :
+                        '👤 Шукайте обличчя...';
+                    statusEl.className = faceFound ? 'found' : 'lost';
+                }, 1500);
+            }
         });
 
         // === ЗАХОПЛЕННЯ ФОТО ===
@@ -502,26 +497,19 @@
         const previewShare = document.getElementById('preview-share');
         const previewDownload = document.getElementById('preview-download');
 
-        // Функція захоплення кадру з A-Frame
         function captureFrame() {
-            const scene = document.querySelector('a-scene');
-            const canvas = scene.renderer.domElement;
-
-            // Створюємо буферне полотно
+            const canvas = document.querySelector('a-scene').renderer.domElement;
             const buffer = document.createElement('canvas');
             buffer.width = canvas.width;
             buffer.height = canvas.height;
             const ctx = buffer.getContext('2d');
-
-            // Копіюємо canvas A-Frame
             ctx.drawImage(canvas, 0, 0);
 
-            // Додаємо водяний знак
             ctx.font = 'bold 14px Arial';
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.textAlign = 'right';
             ctx.textBaseline = 'bottom';
-            ctx.fillText('Virtual Try-On © 2024', buffer.width - 20, buffer.height - 20);
+            ctx.fillText('Virtual Try-On', buffer.width - 20, buffer.height - 20);
 
             return buffer.toDataURL('image/png');
         }
@@ -559,10 +547,9 @@
                     navigator.share({
                         files: files,
                         title: 'Віртуальна примірочна',
-                        text: 'Подивіться на мій віртуальний образ! 👗'
+                        text: 'Подивіться на мій образ! 👗'
                     }).catch(() => {});
                 } else {
-                    // Fallback: завантаження
                     const link = document.createElement('a');
                     link.download = 'virtual-tryon.png';
                     link.href = previewImage.src;
@@ -571,18 +558,24 @@
             });
         });
 
-        // === Клавіатурні скорочення ===
+        // === КЛАВІАТУРА ===
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'c' || e.key === 'C') {
-                captureBtn.click();
-            }
-            if (e.key === 'Escape') {
-                preview.style.visibility = 'hidden';
-            }
+            if (e.key === 'c' || e.key === 'C') captureBtn.click();
+            if (e.key === 'Escape') preview.style.visibility = 'hidden';
         });
 
-        // === ПІДКАЗКА ===
-        console.log('💡 Натисніть C для захоплення фото, ESC для закриття');
+        // === АВТОМАТИЧНИЙ ЗАПУСК ===
+        // Примусово запускаємо MindAR через 3 секунди (якщо не запустився)
+        setTimeout(() => {
+            const mindar = document.querySelector('a-scene').components['mindar-face'];
+            if (mindar && !mindar.started) {
+                console.log('🔄 Примусовий запуск MindAR...');
+                mindar.start();
+            }
+        }, 3000);
+
+        console.log('🚀 Віртуальна примірочна запущена');
+        console.log('💡 Натисніть C для фото, ESC для закриття');
     });
 </script>
 
