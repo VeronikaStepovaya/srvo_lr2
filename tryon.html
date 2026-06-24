@@ -14,7 +14,6 @@
     </script>
 
     <style>
-        /* ... ваші стилі ... */
         body {
             margin: 0;
             overflow: hidden;
@@ -136,6 +135,10 @@
             border-color: rgba(254, 202, 87, 0.3);
             color: #feca57;
         }
+        #status.loading {
+            border-color: rgba(108, 92, 231, 0.3);
+            color: #a29bfe;
+        }
         #preview {
             position: fixed;
             z-index: 30;
@@ -234,6 +237,10 @@
                 transform: rotate(360deg);
             }
         }
+        #loading .progress {
+            font-size: 14px;
+            color: #a8b2d1;
+        }
         #loading.hidden {
             display: none;
         }
@@ -280,13 +287,14 @@
 
     <div id="loading">
         <div class="spinner"></div>
-        <span>⏳ Завантаження...</span>
+        <span>⏳ Завантаження MindAR...</span>
+        <span class="progress" id="loadProgress">Завантаження моделі обличчя...</span>
     </div>
 
     <a href="index.html" class="back-btn">← Назад</a>
     <button id="switch-cam">🔄</button>
 
-    <div id="status" class="lost">👤 Шукайте обличчя...</div>
+    <div id="status" class="loading">⏳ Ініціалізація...</div>
 
     <div class="options-panel" id="optionsPanel">
         <div class="category-group">
@@ -323,8 +331,7 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- ВИПРАВЛЕНА A-FRAME СЦЕНА                                      -->
-    <!-- ВАЖЛИВО: ВСІ ПАРАМЕТРИ ПЕРЕДАЮТЬСЯ ПРАВИЛЬНО                 -->
+    <!-- ВИПРАВЛЕНА A-FRAME СЦЕНА ЗІ ЗБІЛЬШЕНИМ ТАЙМАУТОМ           -->
     <!-- ============================================================ -->
     <a-scene
     mindar-face="
@@ -333,6 +340,7 @@
         uiScanning: no;
         uiError: no;
         maxTrack: 1;
+        timeout: 60;
     "
     embedded
     color-space="sRGB"
@@ -392,13 +400,42 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const loading = document.getElementById('loading');
+        const loadProgress = document.getElementById('loadProgress');
         const statusEl = document.getElementById('status');
         const switchCam = document.getElementById('switch-cam');
 
-        // Приховуємо лоадер через 2 секунди
-        setTimeout(() => {
-            loading.classList.add('hidden');
-        }, 2000);
+        // === ВІДСТЕЖЕННЯ СТАНУ ЗАВАНТАЖЕННЯ ===
+        let loadAttempts = 0;
+        const maxAttempts = 30;
+
+        function checkLoading() {
+            loadAttempts++;
+            const mindar = document.querySelector('a-scene').components['mindar-face'];
+
+            if (mindar && mindar.started) {
+                loading.classList.add('hidden');
+                statusEl.textContent = '👤 Шукайте обличчя...';
+                statusEl.className = 'lost';
+                console.log('✅ MindAR успішно запущено!');
+                return;
+            }
+
+            if (loadAttempts > maxAttempts) {
+                loading.classList.add('hidden');
+                statusEl.textContent = '⚠️ Помилка завантаження. Спробуйте перезавантажити.';
+                statusEl.className = 'lost';
+                statusEl.style.color = '#ff4757';
+                console.log('❌ MindAR не запустився після ' + maxAttempts + ' спроб');
+                return;
+            }
+
+            const dots = '.'.repeat(loadAttempts % 4);
+            loadProgress.textContent = 'Завантаження моделі обличчя' + dots;
+            setTimeout(checkLoading, 500);
+        }
+
+        // Починаємо перевірку через 2 секунди
+        setTimeout(checkLoading, 2000);
 
         // === СТАТУС ВІДСТЕЖЕННЯ ===
         const scene = document.querySelector('a-scene');
@@ -564,18 +601,23 @@
             if (e.key === 'Escape') preview.style.visibility = 'hidden';
         });
 
-        // === АВТОМАТИЧНИЙ ЗАПУСК ===
-        // Примусово запускаємо MindAR через 3 секунди (якщо не запустився)
+        // === ПРИМУСОВИЙ ПЕРЕЗАПУСК ПРИ ПОМИЛЦІ ===
+        // Якщо через 15 секунд все ще не працює, перезавантажуємо сторінку
         setTimeout(() => {
             const mindar = document.querySelector('a-scene').components['mindar-face'];
-            if (mindar && !mindar.started) {
-                console.log('🔄 Примусовий запуск MindAR...');
-                mindar.start();
+            if (!mindar || !mindar.started) {
+                console.log('🔄 Примусовий перезапуск сторінки...');
+                // Показуємо повідомлення
+                statusEl.textContent = '🔄 Перезавантаження...';
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
             }
-        }, 3000);
+        }, 15000);
 
         console.log('🚀 Віртуальна примірочна запущена');
         console.log('💡 Натисніть C для фото, ESC для закриття');
+        console.log('💡 Якщо довго завантажується - оновіть сторінку');
     });
 </script>
 
